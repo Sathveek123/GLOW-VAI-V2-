@@ -423,11 +423,17 @@ function MapCanvasView({
       attributionControl: false
     }).setView([16.5123, 80.6400], 14);
 
-    // High Quality CartoDB Voyager Street Cartography Tile Layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // High Quality OpenStreetMap & Esri Cartography Tile Layer (100% Free, No Watermark, No Key Required)
+    const streetMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
-      subdomains: 'abcd'
-    }).addTo(map);
+      attribution: 'Esri, OpenStreetMap'
+    });
+
+    const satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19
+    });
+
+    streetMap.addTo(map);
 
     // Curved turn-by-turn road waypoints along MG Road & Vijayawada street corridors
     const roadWaypoints = [

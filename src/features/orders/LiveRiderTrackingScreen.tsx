@@ -250,7 +250,7 @@ export const LiveRiderTrackingScreen: React.FC<LiveRiderTrackingScreenProps> = (
 };
 
 // ─────────────────────────────────────────────
-// SWIGGY / UBER STYLE CUSTOM VECTOR ROUTE MAP CANVAS
+// REAL INTERACTIVE LEAFLET / OPENSTREETMAP CARTOGRAPHY MAP
 // ─────────────────────────────────────────────
 function MapCanvasView({
   vendorShopName,
@@ -265,28 +265,290 @@ function MapCanvasView({
   progressPercent: number;
   etaMinutes: number;
 }) {
+  const leafletHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #leafletMap { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; }
+    
+    .leaflet-container { background: #e2e8f0; }
+    
+    .custom-pin-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: auto;
+    }
+    .pin-icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 19px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+      border: 2px solid #ffffff;
+      color: white;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .pin-label-box {
+      background: rgba(255, 255, 255, 0.98);
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      white-space: nowrap;
+    }
+    .pin-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 14px;
+    }
+    .pin-sub {
+      font-size: 9px;
+      font-weight: 600;
+      color: #64748b;
+      line-height: 12px;
+    }
+    
+    .rider-scooter-marker {
+      width: 48px;
+      height: 48px;
+      border-radius: 24px;
+      background: #8F0D2F;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 8px 24px rgba(143,13,47,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      animation: riderPulse 1.6s infinite ease-in-out;
+    }
+    @keyframes riderPulse {
+      0% { box-shadow: 0 0 0 0 rgba(143,13,47,0.6); }
+      70% { box-shadow: 0 0 0 18px rgba(143,13,47,0); }
+      100% { box-shadow: 0 0 0 0 rgba(143,13,47,0); }
+    }
+
+    .top-floating-bar {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 1000;
+      display: flex;
+      gap: 10px;
+    }
+    .badge-gps {
+      background: #0f172a;
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .dot-live-green {
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: blinkGreen 1.2s infinite;
+    }
+    @keyframes blinkGreen { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    
+    .badge-eta-pill {
+      background: #8F0D2F;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(143,13,47,0.35);
+    }
+
+    .recenter-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .recenter-btn:hover {
+      background: #f8fafc;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <div class="top-floating-bar">
+    <div class="badge-gps"><div class="dot-live-green"></div> LIVE GPS SATELLITE</div>
+    <div class="badge-eta-pill">⚡ ${etaMinutes} MINS ETA</div>
+  </div>
+  
+  <div id="leafletMap"></div>
+
+  <button class="recenter-btn" onclick="recenterRoute()">🎯 Recenter Route View</button>
+
+  <script>
+    // Real Vijayawada City Coordinates Grid
+    const originCoords = [16.5062, 80.6480]; // MG Road Darkstore Hub
+    const destCoords = [16.5185, 80.6320];   // Destination Home
+
+    const map = L.map('leafletMap', {
+      zoomControl: true,
+      attributionControl: false
+    }).setView([16.5123, 80.6400], 14);
+
+    // High Quality CartoDB Voyager Street Cartography Tile Layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd'
+    }).addTo(map);
+
+    // Curved turn-by-turn road waypoints along MG Road & Vijayawada street corridors
+    const roadWaypoints = [
+      [16.5062, 80.6480], // Darkstore MG Road
+      [16.5082, 80.6452], // Benz Circle Flyover
+      [16.5108, 80.6422], // Bandar Road Corridor
+      [16.5138, 80.6388], // Convent Street Junction
+      [16.5162, 80.6352], // Eluru Road Crossing
+      [16.5185, 80.6320]  // User Destination Address
+    ];
+
+    // Outer Glow Shadow Polyline
+    L.polyline(roadWaypoints, {
+      color: '#FBE0DC',
+      weight: 12,
+      opacity: 0.9,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map);
+
+    // Primary Delivery Route Polyline Path
+    const routeLine = L.polyline(roadWaypoints, {
+      color: '#8F0D2F',
+      weight: 6,
+      opacity: 0.95,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map);
+
+    // Auto fit map view to route bounds
+    map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
+
+    // 1. ORIGIN DARKSTORE VENDOR MARKER
+    const storeIcon = L.divIcon({
+      className: 'custom-store-pin',
+      html: \`
+        <div class="custom-pin-wrap">
+          <div class="pin-icon-box" style="background:#5C2A91;">🏪</div>
+          <div class="pin-label-box">
+            <div class="pin-title">${vendorShopName.replace(/'/g, "\\'")}</div>
+            <div class="pin-sub">Vendor Origin · Dispatched</div>
+          </div>
+        </div>
+      \`,
+      iconSize: [220, 44],
+      iconAnchor: [19, 22]
+    });
+    L.marker(originCoords, { icon: storeIcon }).addTo(map);
+
+    // 2. DESTINATION HOME MARKER
+    const homeIcon = L.divIcon({
+      className: 'custom-home-pin',
+      html: \`
+        <div class="custom-pin-wrap">
+          <div class="pin-icon-box" style="background:#159447;">🏠</div>
+          <div class="pin-label-box">
+            <div class="pin-title">Your Saved Address</div>
+            <div class="pin-sub">${userDestinationAddress.replace(/'/g, "\\'")}</div>
+          </div>
+        </div>
+      \`,
+      iconSize: [240, 44],
+      iconAnchor: [19, 22]
+    });
+    L.marker(destCoords, { icon: homeIcon }).addTo(map);
+
+    // 3. LIVE ANIMATED RIDER SCOOTER MARKER
+    const riderIcon = L.divIcon({
+      className: 'custom-rider-pin',
+      html: '<div class="rider-scooter-marker">🛵</div>',
+      iconSize: [48, 48],
+      iconAnchor: [24, 24]
+    });
+
+    let currentIdx = 2;
+    const riderMarker = L.marker(roadWaypoints[currentIdx], { icon: riderIcon }).addTo(map);
+    riderMarker.bindPopup('<b>Rahul Kumar</b><br>🛵 TVS Jupiter (AP 39 KQ 7321)<br><i>⚡ Arriving in ${etaMinutes} mins</i>').openPopup();
+
+    // Smooth movement along street nodes
+    setInterval(() => {
+      currentIdx = (currentIdx + 1) % roadWaypoints.length;
+      if (currentIdx === 0) currentIdx = 1;
+      riderMarker.setLatLng(roadWaypoints[currentIdx]);
+    }, 3500);
+
+    function recenterRoute() {
+      map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
+    }
+  </script>
+</body>
+</html>
+  `;
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.mapCanvasContainer}>
+        <iframe
+          title="Live Delivery Route Map"
+          srcDoc={leafletHtml}
+          style={{ width: '100%', height: '100%', border: 0 }}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.mapCanvasContainer}>
-      {/* Background Vector Map Roads Grid & Krishna River Stream */}
+      {/* Native Leaflet / Vector Map Fallback View */}
       <View style={styles.vectorRoadGrid} />
       <View style={styles.vectorRiverRibbon} />
 
-      {/* Neighborhood Street Badges */}
       <View style={[styles.mapLabelBadge, { top: '12%', left: '8%' }]}>
         <Text style={styles.mapLabelText}>📍 Benz Circle Hub</Text>
       </View>
       <View style={[styles.mapLabelBadge, { top: '38%', right: '12%' }]}>
         <Text style={styles.mapLabelText}>📍 MG Road Express Corridor</Text>
       </View>
-      <View style={[styles.mapLabelBadge, { top: '68%', left: '12%' }]}>
-        <Text style={styles.mapLabelText}>📍 {userDestinationAddress.split(',')[0]}</Text>
-      </View>
 
-      {/* SWIGGY/UBER STYLE DYNAMIC POLYLINE ROUTE */}
       <View style={styles.routePolylineTrack} />
       <View style={[styles.routePolylineActive, { height: `${progressPercent}%` }]} />
 
-      {/* ORIGIN PIN: VENDOR DARKSTORE HUB */}
       <View style={[styles.pinBadge, styles.originPinPos]}>
         <View style={styles.originMarkerBox}>
           <Store size={18} color="#FFFFFF" />
@@ -297,7 +559,6 @@ function MapCanvasView({
         </View>
       </View>
 
-      {/* LIVE ANIMATED RIDER MARKER (MOVING ALONG ROUTE) */}
       <View style={[styles.riderMarkerPos, { top: `${30 + progressPercent * 0.42}%` }]}>
         <View style={styles.pulseRing} />
         <View style={styles.riderMarkerBadge}>
@@ -309,7 +570,6 @@ function MapCanvasView({
         </View>
       </View>
 
-      {/* DESTINATION PIN: USER'S LIVE LOCATION */}
       <View style={[styles.pinBadge, styles.destinationPinPos]}>
         <View style={styles.destinationPulseRing} />
         <View style={styles.destinationMarkerBox}>
@@ -318,18 +578,6 @@ function MapCanvasView({
         <View style={styles.destinationTooltip}>
           <Text style={styles.destinationTooltipTitle}>Your Delivery Address</Text>
           <Text style={styles.destinationTooltipSub} numberOfLines={1}>{userDestinationAddress}</Text>
-        </View>
-      </View>
-
-      {/* MAP TOP CONTROLS BADGE */}
-      <View style={styles.mapTopOverlayControls}>
-        <View style={styles.liveGpsBadge}>
-          <View style={styles.liveGreenDot} />
-          <Text style={styles.liveGpsText}>LIVE GPS TRACKING</Text>
-        </View>
-        <View style={styles.etaQuickBadge}>
-          <Clock size={12} color="#8F0D2F" />
-          <Text style={styles.etaQuickText}>{etaMinutes} MINS ETA</Text>
         </View>
       </View>
     </View>

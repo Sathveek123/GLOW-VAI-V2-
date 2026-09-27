@@ -57,7 +57,7 @@ export const CheckoutReviewScreen: React.FC = () => {
 
   const handleContinueToPayment = () => {
     safeHapticImpact();
-    router.push('/(customer)/checkout' as any);
+    router.push('/payment-method' as any);
   };
 
   const orderItems = [

@@ -1,0 +1,9 @@
+appId: com.glowvai.app
+---
+- launchApp
+- tapOn: "✨ Glow AI Scan"
+- assertVisible: "Ready to scan"
+- extendedWaitUntil:
+    visible: "Check your scan"
+    timeout: 5000
+- assertVisible: "Use this photo"

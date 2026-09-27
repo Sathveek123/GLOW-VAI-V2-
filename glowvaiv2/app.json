@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "GlowVAI",
+    "slug": "glowvai-v2",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.glowvai.app"
+    },
+    "android": {
+      "package": "com.glowvai.app",
+      "versionCode": 200,
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A"
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBnoALeig5N1NnsBijm23oaATTfcNHqwXg"
+        }
+      },
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow GlowVAI to access your camera for clinical face scanning."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow GlowVAI to access your location for express delivery address detection."
+        }
+      ]
+    ],
+    "scheme": "glowvai",
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "7865bc57-ca6d-4619-9fe6-7dd9cfc61449"
+      }
+    }
+  }
+}

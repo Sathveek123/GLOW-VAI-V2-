@@ -1,0 +1,27 @@
+node_modules/
+*.zip
+.agents*
+dist/
+build/
+.env
+__pycache__/
+
+# Expo & Metro
+expo-env.d.ts
+.expo/
+.web/
+
+# Android build artifacts & local properties
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/.idea/
+*.apk
+*.aab
+*.keystore
+!android/app/debug.keystore
+
+# macOS & System
+.DS_Store
+Thumbs.db

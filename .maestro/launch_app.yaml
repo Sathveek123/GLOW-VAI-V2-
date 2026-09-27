@@ -1,0 +1,4 @@
+appId: com.glowvai.app
+---
+- launchApp
+- assertVisible: "glowvai"
